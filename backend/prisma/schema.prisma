@@ -1,0 +1,54 @@
+// ไฟล์โครงสร้างฐานข้อมูล Prisma
+
+generator client {
+  provider = "prisma-client-js"
+  engineType = "client"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+// ผู้ใช้งาน (User)
+model User {
+  id           Int           @id @default(autoincrement()) // ไอดีผู้ใช้ (Primary Key)
+  name         String?                                     // ชื่อผู้ใช้ (Optional)
+  email        String        @unique                      // อีเมล (ใช้สำหรับ Login, ต้องไม่ซ้ำ)
+  password     String                                     // รหัสผ่าน
+  createdAt    DateTime      @default(now())              // วันที่สมัครสมาชิก
+  transactions Transaction[]                                // ความสัมพันธ์: หนึ่งผู้ใช้มีได้หลายรายการ
+}
+
+// หมวดหมู่ (Category)
+model Category {
+  id        Int           @id @default(autoincrement()) // ไอดีหมวดหมู่
+  name      String                                      // ชื่อหมวดหมู่ (เช่น อาหาร, เงินเดือน)
+  type      CategoryType                                // ประเภท: income (รายรับ) หรือ expense (รายจ่าย)
+  createdAt DateTime      @default(now())              // วันที่สร้างหมวดหมู่
+  transactions Transaction[]                                // ความสัมพันธ์: หนึ่งหมวดหมู่มีได้หลายรายการ
+}
+
+// ธุรกรรม (Transaction)
+model Transaction {
+  id              Int             @id @default(autoincrement()) // ไอดีรายการ
+  type            TransactionType                               // ประเภทรายการ: income หรือ expense
+  amount          Decimal         @db.Decimal(10, 2)            // จำนวนเงิน (รองรับทศนิยม 2 ตำแหน่ง)
+  note            String?                                       // หมายเหตุเพิ่มเติม
+  transactionDate DateTime        @db.Date                      // วันที่ทำรายการจริง
+  createdAt       DateTime        @default(now())               // วันที่บันทึกลงระบบ
+  userId     Int                                                // ไอดีผู้ใช้ที่ทำรายการ
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade) // ความสัมพันธ์กับ User
+  categoryId Int?                                               // ไอดีหมวดหมู่ (Optional)
+  category   Category?  @relation(fields: [categoryId], references: [id], onDelete: SetNull) // ความสัมพันธ์กับ Category
+}
+
+// กำหนดประเภทของรายการ
+enum CategoryType {
+  income    // รายรับ
+  expense   // รายจ่าย
+}
+enum TransactionType {
+  income    // รายรับ
+  expense   // รายจ่าย
+}
+
